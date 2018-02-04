@@ -30,7 +30,7 @@ void task_display(void *arg)
 			tm1637_set_segment_raw(lcd, 2, 0x40);
 			tm1637_set_segment_raw(lcd, 3, 0x40);
 		} else {
-			tm1637_set_number_lead_dot(lcd, (timeinfo.tm_hour * 100) + timeinfo.tm_min, false, dot_ptr ? 0x00 : 0xFF);
+			tm1637_set_number_lead_dot(lcd, (timeinfo.tm_hour * 100) + timeinfo.tm_min, false, dot_ptr ? 0xFF : 0x00);
 		}
 
 		if (min_prev != timeinfo.tm_min) {

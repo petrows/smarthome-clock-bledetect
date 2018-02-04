@@ -79,12 +79,15 @@ void task_control(void *arg)
 	{
 		main_loops++;
 
+		ESP_LOGI(TAG, "Main loop %d", main_loops);
+
 		// 0. Init WiFi and set time
 		app_wifi_init();
 		if (!app_wifi_wait()) {
 			// Error!
 			ESP_LOGE(TAG, "Wifi connection FAILED!");
 			g_clock_warning = true;
+			esp_wifi_stop(); // Reset it
 			vTaskDelay( (30 * 1000) / portTICK_PERIOD_MS);
 			continue; // Try to reconnect
 		}
@@ -94,9 +97,8 @@ void task_control(void *arg)
 		// Once per X hours - force drop time to ensure time is set. And wait for it
 		if ( !ntp_set || (main_loops-ntp_reset_counter) >= APP_FREQ_TIMEDROP ) {
 			// Force erase and reset time
+			ESP_LOGI(TAG, "Force reset NTP time");
 			ntp_set = false;
-			int ntp_retry = 0;
-			const int ntp_retry_count = 10;
 			struct timeval tm_zero = {0,0};
 			settimeofday(&tm_zero, NULL);
 			app_sntp_init();
@@ -107,12 +109,14 @@ void task_control(void *arg)
 			} else {
 				// Okay
 				ntp_set = true;
+				ntp_reset_counter = main_loops;
 			}
 		} else {
 			app_sntp_init(); // Just run NTP in background
 		}
 
 		// Wait for WLAN up - to allow NTP to set time
+		ESP_LOGI(TAG, "WLAN safe wait for %d sec", APP_TIME_WLAN);
 		vTaskDelay( (APP_TIME_WLAN * 1000) / portTICK_PERIOD_MS);
 
 		// Flush scan results to MQTT
@@ -123,6 +127,7 @@ void task_control(void *arg)
 		}
 
 		// Stop wifi and go to scan mode
+		ESP_LOGI(TAG, "Scan BLE for %d sec", APP_TIME_SCAN);
 		ESP_ERROR_CHECK( esp_wifi_stop() );
 		ESP_ERROR_CHECK( esp_ble_gap_start_scanning(10) );
 		vTaskDelay( (APP_TIME_SCAN * 1000) / portTICK_PERIOD_MS);
