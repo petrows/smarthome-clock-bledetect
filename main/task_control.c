@@ -129,7 +129,7 @@ void task_control(void *arg)
 		// Stop wifi and go to scan mode
 		ESP_LOGI(TAG, "Scan BLE for %d sec", APP_TIME_SCAN);
 		ESP_ERROR_CHECK( esp_wifi_stop() );
-		ESP_ERROR_CHECK( esp_ble_gap_start_scanning(10) );
+		ESP_ERROR_CHECK( esp_ble_gap_start_scanning(APP_TIME_SCAN) );
 		vTaskDelay( (APP_TIME_SCAN * 1000) / portTICK_PERIOD_MS);
 
 		// All ok?

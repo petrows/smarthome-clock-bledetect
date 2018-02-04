@@ -30,7 +30,24 @@ void task_display(void *arg)
 			tm1637_set_segment_raw(lcd, 2, 0x40);
 			tm1637_set_segment_raw(lcd, 3, 0x40);
 		} else {
-			tm1637_set_number_lead_dot(lcd, (timeinfo.tm_hour * 100) + timeinfo.tm_min, false, dot_ptr ? 0xFF : 0x00);
+			uint8_t clock_h = timeinfo.tm_hour;
+			uint8_t clock_m = timeinfo.tm_min;
+
+			if (clock_h < 10) {
+				tm1637_set_segment_number(lcd, 0, 0xFF, dot_ptr);
+				tm1637_set_segment_number(lcd, 1, clock_h, dot_ptr);
+			} else {
+				tm1637_set_segment_number(lcd, 0, clock_h / 10, dot_ptr);
+				tm1637_set_segment_number(lcd, 1, clock_h % 10, dot_ptr);
+			}
+
+			if (clock_m < 10) {
+				tm1637_set_segment_number(lcd, 2, 0, dot_ptr);
+				tm1637_set_segment_number(lcd, 3, clock_m, dot_ptr);
+			} else {
+				tm1637_set_segment_number(lcd, 2, clock_m / 10, dot_ptr);
+				tm1637_set_segment_number(lcd, 3, clock_m % 10, dot_ptr);
+			}
 		}
 
 		if (min_prev != timeinfo.tm_min) {
