@@ -27,6 +27,13 @@
 
 #define TAG "APP"
 
+// Time to keep Wifi ON (for NTP) (seconds)
+#define APP_TIME_WLAN 10
+// Time to keep BLE SCAN (seconds)
+#define APP_TIME_SCAN 10
+// How often (main loops count) to force drop time and re-set it
+#define APP_FREQ_TIMEDROP 10
+
 extern EventGroupHandle_t g_app_evt;
 extern bool g_clock_warning;
 
