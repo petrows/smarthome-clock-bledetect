@@ -1,40 +1,41 @@
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/event_groups.h>
-#include <driver/gpio.h>
-#include <esp_event_loop.h>
-#include <esp_system.h>
-#include <esp_wifi.h>
-#include <esp_log.h>
-#include <esp_attr.h>
-#include <esp_bt.h>
-#include <esp_bt_main.h>
-#include <esp_gap_ble_api.h>
-#include <nvs_flash.h>
+#include "app_global.h"
+#include "task_control.h"
+#include "task_display.h"
 
-#include <lwip/err.h>
-#include <apps/sntp/sntp.h>
+EventGroupHandle_t g_app_evt;
+bool g_clock_warning = false;
 
-#include "sdkconfig.h"
+static esp_err_t esp_event_handler(void *ctx, system_event_t *event)
+{
+	ESP_LOGI(TAG, "esp_event_handler event %d", event->event_id);
 
-#include "global.h"
+	switch (event->event_id)
+	{
+		case SYSTEM_EVENT_STA_START:
+			esp_wifi_connect();
+			break;
+		case SYSTEM_EVENT_STA_GOT_IP:
+			xEventGroupSetBits(g_app_evt, APP_EVT_WIFI_CONNECTED);
+			break;
+		case SYSTEM_EVENT_STA_DISCONNECTED:
+			xEventGroupClearBits(g_app_evt, APP_EVT_WIFI_CONNECTED);
+			break;
+		default:
+			break;
+	}
 
-#include <tm1637.h>
+	return ESP_OK;
+}
 
 void app_main() {
 	ESP_ERROR_CHECK(nvs_flash_init());
 
-	esp_err_t ret;
-	wifi_event_group = xEventGroupCreate();
-	ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+	g_app_evt = xEventGroupCreate();
 
-	setenv("TZ", "CET-1CEST-2,M3.5.0/02:00:00,M10.5.0/03:00:00", 1);
+	ESP_ERROR_CHECK(esp_event_loop_init(esp_event_handler, NULL)); // Global ESP event handler
+
+	setenv("TZ", CONFIG_CLOCK_TIMEZONE, 1);
 	tzset();
 
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -43,12 +44,8 @@ void app_main() {
 	ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
 	ESP_ERROR_CHECK(esp_bluedroid_init());
 	ESP_ERROR_CHECK(esp_bluedroid_enable());
-	ESP_ERROR_CHECK(esp_ble_gap_register_callback(esp_gap_cb));
+	// ESP_ERROR_CHECK(esp_ble_gap_register_callback(esp_gap_cb));
 
-	// ESP_ERROR_CHECK( esp_ble_gap_start_scanning(0) );
-	// ESP_ERROR_CHECK( esp_ble_gap_start_scanning(10) );
-
-	//xTaskCreate(&blink_task, "blink_task", 4096, NULL, 5, NULL);
-	xTaskCreate(&led_task, "led_task", 4096, NULL, 5, NULL);
-	xTaskCreate(&ntp_task, "ntp_task", 4096, NULL, 5, NULL);
+	xTaskCreate(&task_control, "task_control", 4096, NULL, 5, NULL);
+	xTaskCreate(&task_display, "task_display", 4096, NULL, 5, NULL);
 }
