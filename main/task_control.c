@@ -1,15 +1,11 @@
 #include "task_control.h"
-
-#include <mqtt.h>
+#include "app_scan.h"
+#include "app_mqtt.h"
 
 static bool app_sntp_init(void);
 static bool app_sntp_wait(void);
 static bool app_wifi_init(void);
 static bool app_wifi_wait(void);
-static bool app_mqtt_init(void);
-static bool app_mqtt_wait(void);
-static bool app_mqtt_stop(void);
-static bool app_mqtt_clear(void);
 
 bool app_sntp_init(void)
 {
@@ -69,139 +65,26 @@ bool app_wifi_wait(void)
 	return (evt_res & APP_EVT_WIFI_CONNECTED);
 }
 
-mqtt_client * mqtt = NULL;
-bool mqtt_connected = false;
-static void app_mqtt_cb_connected(mqtt_client *client, mqtt_event_data_t *event_data) {}
-static void app_mqtt_cb_disconnected(mqtt_client *client, mqtt_event_data_t *event_data) {}
-static void app_mqtt_cb_subscribe(mqtt_client *client, mqtt_event_data_t *event_data) {}
-static void app_mqtt_cb_publish(mqtt_client *client, mqtt_event_data_t *event_data) {}
-static void app_mqtt_cb_data(mqtt_client *client, mqtt_event_data_t *event_data) {}
-
-bool app_mqtt_init(void)
-{
-	// Init MQTT config
-	struct mqtt_settings settings = {
-		.host = CONFIG_MQTT_HOST,
-		.port = CONFIG_MQTT_PORT,
-		.client_id = "esp32",
-		.username = CONFIG_MQTT_USER,
-		.password = CONFIG_MQTT_PASS,
-		.clean_session = 0,
-		.keepalive = 120,
-		.lwt_topic = "/lwt",
-		.lwt_msg = "offline",
-		.lwt_qos = 0,
-		.lwt_retain = 0,
-		.connected_cb = app_mqtt_cb_connected,
-		.disconnected_cb = app_mqtt_cb_disconnected,
-		.subscribe_cb = app_mqtt_cb_subscribe,
-		.publish_cb = app_mqtt_cb_publish,
-		.data_cb = app_mqtt_cb_data
-	};
-
-	mqtt_connected = false;
-	mqtt = mqtt_start(&settings);
-
-	return true;
-}
-
-bool app_mqtt_wait(void)
-{
-	for (int ntp_retry=0; ntp_retry<10; ++ntp_retry)
-	{
-		if (mqtt_connected) {
-			return true;
-		}
-		vTaskDelay(2000 / portTICK_PERIOD_MS);
-	}
-	return false;
-}
-
-bool app_mqtt_stop(void)
-{
-	if (NULL != mqtt) {
-		mqtt_stop(mqtt);
-		mqtt = NULL;
-	}
-	return true;
-}
-
-bool app_mqtt_clear(void)
-{
-	return true;
-}
-
 void task_control(void *arg)
 {
-    ESP_LOGI(TAG, "task_control Init");
-    ESP_LOGI(TAG, "task_control Free memory: %d bytes", system_get_free_heap_size());
-    ESP_LOGI(TAG, "task_control SDK version: %s", system_get_sdk_version());
+	ESP_LOGI(TAG, "task_control Init");
 
 	int main_loops = 0;
 	int ntp_reset_counter = 0;
 	bool ntp_set = false;
 
+	app_wifi_init();
+	app_wifi_wait();
+	app_sntp_init();
+	app_mqtt_init();
+	app_scan_init();
 
-
-	while (true)
-	{
-		main_loops++;
-
-		ESP_LOGI(TAG, "Main loop %d", main_loops);
-
-		// 0. Init WiFi and set time
-		app_wifi_init();
-		if (!app_wifi_wait()) {
-			// Error!
-			ESP_LOGE(TAG, "Wifi connection FAILED!");
-			g_clock_warning = true;
-			esp_wifi_stop(); // Reset it
-			vTaskDelay( (30 * 1000) / portTICK_PERIOD_MS);
-			continue; // Try to reconnect
+	while (true) {
+		if (!g_mqtt_connected) {
+			app_mqtt_init();
 		}
 
-		// 1. Start NTP client
-
-		// Once per X hours - force drop time to ensure time is set. And wait for it
-		if ( !ntp_set || (main_loops-ntp_reset_counter) >= APP_FREQ_TIMEDROP ) {
-			// Force erase and reset time
-			ESP_LOGI(TAG, "Force reset NTP time");
-			ntp_set = false;
-			struct timeval tm_zero = {0,0};
-			settimeofday(&tm_zero, NULL);
-			app_sntp_init();
-			if (!app_sntp_wait()) { // Force wait
-				ESP_LOGE(TAG, "NTP connection FAILED!");
-				g_clock_warning = true;
-				continue;
-			} else {
-				// Okay
-				ntp_set = true;
-				ntp_reset_counter = main_loops;
-			}
-		} else {
-			app_sntp_init(); // Just run NTP in background
-		}
-
-		// Flush scan results to MQTT
-		if (!app_mqtt_init())
-		{
-			ESP_LOGE(TAG, "MQTT connection FAILED!");
-			g_clock_warning = true;
-		}
-
-		// Wait for WLAN up - to allow NTP to set time
-		ESP_LOGI(TAG, "WLAN safe wait for %d sec", APP_TIME_WLAN);
-		vTaskDelay( (APP_TIME_WLAN * 1000) / portTICK_PERIOD_MS);
-
-		// Stop wifi and go to scan mode
-		app_mqtt_clear(); // Clean prev results
-		ESP_LOGI(TAG, "Scan BLE for %d sec", APP_TIME_SCAN);
-		ESP_ERROR_CHECK( esp_wifi_stop() );
-		ESP_ERROR_CHECK( esp_ble_gap_start_scanning(APP_TIME_SCAN) );
-		vTaskDelay( (APP_TIME_SCAN * 1000) / portTICK_PERIOD_MS);
-
-		// All ok?
-		g_clock_warning = false;
+		if (g_mqtt_connected) { mqtt_publish(g_mqtt, "/ble/detect", NULL, 0, 0, 0); }
+		vTaskDelay( (3 * 1000) / portTICK_PERIOD_MS);
 	}
 }

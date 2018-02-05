@@ -20,6 +20,9 @@ static esp_err_t esp_event_handler(void *ctx, system_event_t *event)
 			break;
 		case SYSTEM_EVENT_STA_DISCONNECTED:
 			xEventGroupClearBits(g_app_evt, APP_EVT_WIFI_CONNECTED);
+			esp_wifi_stop();
+			esp_wifi_start();
+			esp_wifi_connect();
 			break;
 		default:
 			break;
@@ -39,7 +42,7 @@ void app_main() {
 	tzset();
 
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
+	ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 	ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
 	ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
 	ESP_ERROR_CHECK(esp_bluedroid_init());

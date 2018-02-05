@@ -30,7 +30,7 @@
 // Time to keep Wifi ON (for NTP) (seconds)
 #define APP_TIME_WLAN 10
 // Time to keep BLE SCAN (seconds)
-#define APP_TIME_SCAN 10
+#define APP_TIME_SCAN ( 60 * 1 )
 // How often (main loops count) to force drop time and re-set it
 #define APP_FREQ_TIMEDROP 100
 
