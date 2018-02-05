@@ -41,14 +41,6 @@ void app_main() {
 	setenv("TZ", CONFIG_CLOCK_TIMEZONE, 1);
 	tzset();
 
-	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-	ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
-	ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
-	ESP_ERROR_CHECK(esp_bluedroid_init());
-	ESP_ERROR_CHECK(esp_bluedroid_enable());
-	// ESP_ERROR_CHECK(esp_ble_gap_register_callback(esp_gap_cb));
-
 	xTaskCreate(&task_control, "task_control", 4096, NULL, 5, NULL);
 	xTaskCreate(&task_display, "task_display", 4096, NULL, 5, NULL);
 }

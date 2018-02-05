@@ -2,3 +2,6 @@
 	path = components/esp-32-tm1637
 	url = git@github.com:petrows/esp-32-tm1637.git
 
+[submodule "components/esp-mqtt"]
+	path = components/esp-mqtt
+	url = git@github.com:256dpi/esp-mqtt.git

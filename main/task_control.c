@@ -81,10 +81,9 @@ void task_control(void *arg)
 
 	while (true) {
 		if (!g_mqtt_connected) {
-			app_mqtt_init();
+			app_mqtt_start();
 		}
 
-		if (g_mqtt_connected) { mqtt_publish(g_mqtt, "/ble/detect", NULL, 0, 0, 0); }
 		vTaskDelay( (3 * 1000) / portTICK_PERIOD_MS);
 	}
 }
