@@ -69,7 +69,7 @@ bool app_wifi_wait(void)
 	return (evt_res & APP_EVT_WIFI_CONNECTED);
 }
 
-mqtt_client mqtt = NULL;
+mqtt_client * mqtt = NULL;
 bool mqtt_connected = false;
 static void app_mqtt_cb_connected(mqtt_client *client, mqtt_event_data_t *event_data) {}
 static void app_mqtt_cb_disconnected(mqtt_client *client, mqtt_event_data_t *event_data) {}
