@@ -27,15 +27,9 @@
 
 #define TAG "APP"
 
-// Time to keep Wifi ON (for NTP) (seconds)
-#define APP_TIME_WLAN 10
-// Time to keep BLE SCAN (seconds)
-#define APP_TIME_SCAN ( 60 * 1 )
-// How often (main loops count) to force drop time and re-set it
-#define APP_FREQ_TIMEDROP 100
-
-extern EventGroupHandle_t g_app_evt;
-extern bool g_clock_warning;
+volatile extern EventGroupHandle_t g_app_evt;
+volatile extern bool g_clock_warning;
+volatile extern bool g_led_signal;
 
 // App event MSG bits
 #define APP_EVT_WIFI_CONNECTED 	0x00000001

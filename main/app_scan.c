@@ -70,7 +70,7 @@ static void app_scan_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap
 	switch (event) {
 	case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
 		ESP_LOGI(TAG, "Scan param set complete, start scanning.");
-		esp_ble_gap_start_scanning(10);
+		esp_ble_gap_start_scanning(30);
 		break;
 	}
 
@@ -97,7 +97,7 @@ static void app_scan_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap
 			if (true || 0x36 == scan_result->scan_rst.bda[5] || 0xd8 == scan_result->scan_rst.bda[5]) {
 				//ESP_LOGI(TAG, "I feel device: ");
 
-				snprintf(mac_buf, 18, "%02X:%02X:%02X:%02X:%02X:%02X"
+				snprintf(mac_buf, 18, "%02X%02X%02X%02X%02X%02X"
 						, scan_result->scan_rst.bda[0]
 						, scan_result->scan_rst.bda[1]
 						, scan_result->scan_rst.bda[2]
@@ -106,6 +106,8 @@ static void app_scan_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap
 						, scan_result->scan_rst.bda[5]);
 
 				add_mac(mac_buf);
+				
+				g_led_signal = true;
 
 				// app_mqtt_send_message("/ble/scan", mac_buf, strlen(mac_buf));
 
@@ -125,8 +127,8 @@ static void app_scan_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap
 
 			app_scan_mac_t * rec = mac_list;
 			while (rec) {
-				snprintf(topic_mac_buf, 32, "/ble/device/%s", rec->mac);
-				app_mqtt_send_message(topic_mac_buf, NULL, 0);
+				snprintf(topic_mac_buf, 32, "%s", rec->mac);
+				app_mqtt_send_message("pws/ble/device", topic_mac_buf, strlen(topic_mac_buf));
 				rec = rec->next;
 			}
 

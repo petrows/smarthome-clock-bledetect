@@ -1,6 +1,7 @@
 #include "app_mqtt.h"
 
 bool g_mqtt_connected = false;
+char client_id[24];
 
 static void mqtt_status_cb(esp_mqtt_status_t status)
 {
@@ -10,8 +11,7 @@ static void mqtt_status_cb(esp_mqtt_status_t status)
 	case ESP_MQTT_STATUS_CONNECTED:
 		g_mqtt_connected = true;
 		gpio_set_level(GPIO_NUM_2, 1);
-		esp_mqtt_subscribe("hello", 0);
-		esp_mqtt_publish("hello", NULL, 0, 0, false);
+		esp_mqtt_publish("pws/clock-ble/boot", (uint8_t*)client_id, strlen(client_id), 0, false);
 		break;
 	case ESP_MQTT_STATUS_DISCONNECTED:
 		gpio_set_level(GPIO_NUM_2, 1);
@@ -36,9 +36,15 @@ bool app_mqtt_init(void)
 
 bool app_mqtt_start(void)
 {
-	esp_mqtt_start(CONFIG_MQTT_HOST, CONFIG_MQTT_PORT, "esp-mqtt", CONFIG_MQTT_USER, CONFIG_MQTT_PASS);
+	uint8_t mac[6];
+	bzero(client_id, 24);
+	esp_wifi_get_mac(ESP_IF_WIFI_STA, mac);
+	snprintf(client_id, 24, "esp32-%02x%02x%02x%02x", (int)mac[2], (int)mac[3], (int)mac[4], (int)mac[5]);
+	ESP_LOGI(TAG, "MQTT client id %s", client_id);
+	esp_mqtt_start(CONFIG_MQTT_HOST, CONFIG_MQTT_PORT, (const char*)client_id, CONFIG_MQTT_USER, CONFIG_MQTT_PASS);
 	return true;
 }
+
 bool app_mqtt_stop(void)
 {
 	esp_mqtt_stop();
@@ -47,7 +53,7 @@ bool app_mqtt_stop(void)
 
 void app_mqtt_send_message(const char * topic, const char * data, int len)
 {
-	esp_mqtt_publish(topic, data, len, 0, false);
+	esp_mqtt_publish(topic, (uint8_t*)data, len, 0, false);
 }
 
 /*
