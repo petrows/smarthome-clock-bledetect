@@ -69,10 +69,6 @@ void task_control(void *arg)
 {
 	ESP_LOGI(TAG, "task_control Init");
 
-	int main_loops = 0;
-	int ntp_reset_counter = 0;
-	bool ntp_set = false;
-
 	app_wifi_init();
 	app_wifi_wait();
 	app_sntp_init();
@@ -80,7 +76,13 @@ void task_control(void *arg)
 	app_scan_init();
 
 	while (true) {
-		if (!g_mqtt_connected) {
+		EventBits_t app_state = xEventGroupGetBits(g_app_evt);
+
+		bool wifi_connected = app_state & APP_EVT_WIFI_CONNECTED;
+		bool mqtt_connected = app_state & APP_EVT_MQTT_CONNECTED;
+
+		if (wifi_connected && !mqtt_connected) {
+			ESP_LOGI(TAG, "reconnect MQTT");
 			app_mqtt_start();
 		}
 

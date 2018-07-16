@@ -1,6 +1,5 @@
 #include "app_mqtt.h"
 
-bool g_mqtt_connected = false;
 char client_id[24];
 
 static void mqtt_status_cb(esp_mqtt_status_t status)
@@ -9,13 +8,13 @@ static void mqtt_status_cb(esp_mqtt_status_t status)
 
 	switch (status) {
 	case ESP_MQTT_STATUS_CONNECTED:
-		g_mqtt_connected = true;
+		xEventGroupSetBits(g_app_evt, APP_EVT_MQTT_CONNECTED);
 		gpio_set_level(GPIO_NUM_2, 1);
 		esp_mqtt_publish("pws/clock-ble/boot", (uint8_t*)client_id, strlen(client_id), 0, false);
 		break;
 	case ESP_MQTT_STATUS_DISCONNECTED:
 		gpio_set_level(GPIO_NUM_2, 1);
-		g_mqtt_connected = false;
+		xEventGroupClearBits(g_app_evt, APP_EVT_MQTT_CONNECTED);
 		break;
 	}
 }
