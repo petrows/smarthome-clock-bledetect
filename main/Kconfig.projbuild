@@ -27,8 +27,8 @@ config MQTT_HOST
 	default "broker.lan"
 
 config MQTT_PORT
-    int "MQTT broker port"
-	default 1883
+    string "MQTT broker port"
+	default "1883"
 
 config MQTT_USER
     string "MQTT broker user"

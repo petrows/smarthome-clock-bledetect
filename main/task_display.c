@@ -99,18 +99,18 @@ void task_display(void *arg)
 			ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
 		}
 		
-		EventBits_t wifi_ok = xEventGroupGetBits(g_app_evt);
-		wifi_ok &= APP_EVT_WIFI_CONNECTED;
-		gpio_set_level(LED_ONBOARD, wifi_ok);
+		EventBits_t app_status = xEventGroupGetBits(g_app_evt);
+		bool wifi_ok = app_status & APP_EVT_WIFI_CONNECTED;
+		bool mqtt_ok = app_status & APP_EVT_MQTT_CONNECTED;
+		gpio_set_level(LED_ONBOARD, wifi_ok && mqtt_ok);
 
-		gpio_set_level(LED_CLOCK, false);
+		for (; g_led_signal != 0; --g_led_signal) {
+			gpio_set_level(LED_CLOCK, true);
+			vTaskDelay(50 / portTICK_PERIOD_MS);
+			gpio_set_level(LED_CLOCK, false);
+			vTaskDelay(50 / portTICK_PERIOD_MS);
+		}
 		
-		vTaskDelay(50 / portTICK_PERIOD_MS);
-		
-		gpio_set_level(LED_CLOCK, g_led_signal);
-		
-		if (g_led_signal) { g_led_signal = false; }
-
 		vTaskDelay(500 / portTICK_PERIOD_MS);
 	}
 }

@@ -94,7 +94,7 @@ static void app_scan_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap
 		esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *) param;
 		switch (scan_result->scan_rst.search_evt) {
 		case ESP_GAP_SEARCH_INQ_RES_EVT: {
-			if (true || 0x36 == scan_result->scan_rst.bda[5] || 0xd8 == scan_result->scan_rst.bda[5]) {
+			//if (true || 0x36 == scan_result->scan_rst.bda[5] || 0xd8 == scan_result->scan_rst.bda[5]) {
 				//ESP_LOGI(TAG, "I feel device: ");
 
 				snprintf(mac_buf, 18, "%02X%02X%02X%02X%02X%02X"
@@ -106,15 +106,15 @@ static void app_scan_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap
 						, scan_result->scan_rst.bda[5]);
 
 				add_mac(mac_buf);
-				
-				g_led_signal = true;
+
+				g_led_signal = g_led_signal + 1;
 
 				// app_mqtt_send_message("/ble/scan", mac_buf, strlen(mac_buf));
 
 				//esp_log_buffer_hex(TAG, scan_result->scan_rst.bda, 6);
 				//adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
 				//esp_log_buffer_char(TAG, adv_name, adv_name_len);
-			}
+			//}
 			break;
 		}
 

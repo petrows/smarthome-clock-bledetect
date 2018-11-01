@@ -29,7 +29,7 @@
 
 volatile extern EventGroupHandle_t g_app_evt;
 volatile extern bool g_clock_warning;
-volatile extern bool g_led_signal;
+volatile extern int g_led_signal;
 
 // App event MSG bits
 #define APP_EVT_WIFI_CONNECTED 	0x00000001

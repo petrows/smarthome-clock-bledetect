@@ -5,7 +5,7 @@
 
 volatile EventGroupHandle_t g_app_evt;
 volatile bool g_clock_warning = false;
-volatile bool g_led_signal = false;
+volatile int g_led_signal = 0;
 
 static esp_err_t esp_event_handler(void *ctx, system_event_t *event)
 {
